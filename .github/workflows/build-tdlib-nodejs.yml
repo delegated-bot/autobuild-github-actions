@@ -1,4 +1,4 @@
-name: Build TDLib for Node.js
+name: Build TDLib for Node.js on Ubuntu
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       NODE_VERSION: '20'
@@ -45,7 +45,7 @@ jobs:
           TD_COMMIT_HASH=$(git rev-parse --short HEAD)
 
           echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
-          echo "PACKAGE_NAME=tdlib-nodejs-${TD_COMMIT_HASH}" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=tdlib-nodejs-${{ runner.os }}-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
       # - name: Build TDLib
       #   run: |
