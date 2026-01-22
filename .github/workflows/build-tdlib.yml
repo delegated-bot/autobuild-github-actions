@@ -9,6 +9,7 @@ permissions:
 jobs:
   build-tdlib-nodejs:
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-24.04
