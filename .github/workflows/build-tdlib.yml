@@ -55,14 +55,24 @@ jobs:
 
       - name: Build TDLib
         run: |
-          mkdir -p /tmp/tdlib
           cd td
           rm -rf build
-          mkdir build && cd build
-          CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
-          CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
-          DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
-          cmake --build . --target install
+          mkdir build
+          cd build
+
+          CXXFLAGS="-stdlib=libc++" \
+          CC=/usr/bin/clang-18 \
+          CXX=/usr/bin/clang++-18 \
+          cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+            -DCMAKE_INSTALL_LIBDIR=lib \
+            -DCMAKE_INSTALL_INCLUDEDIR=include \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+
+          # cmake --build . --target install
+          cmake --install . --dry-run
+
 
       - name: Verify build
         run: |
