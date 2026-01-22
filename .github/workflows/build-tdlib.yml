@@ -49,7 +49,8 @@ jobs:
       - name: Get latest TDLib commit hash
         run: |
           cd td
-          echo "TD_COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          TD_COMMIT_HASH=$(git rev-parse --short HEAD)
+          echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
           echo "PACKAGE_NAME=tdlib-${{ matrix.os }}-nodejs-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
       - name: Build TDLib
