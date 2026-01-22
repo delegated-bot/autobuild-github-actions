@@ -49,8 +49,7 @@ jobs:
       - name: Get latest TDLib commit hash
         run: |
           cd td
-          TD_COMMIT_HASH=$(git rev-parse --short HEAD)
-          echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
+          echo "TD_COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo "PACKAGE_NAME=tdlib-${{ matrix.os }}-nodejs-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
       - name: Build TDLib
@@ -68,9 +67,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX:PATH=../tdlib .. \
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 
-          # cmake --build . --target install
-          cmake --install .
-
+          cmake --build . --target install
 
       - name: Verify build
         run: |
