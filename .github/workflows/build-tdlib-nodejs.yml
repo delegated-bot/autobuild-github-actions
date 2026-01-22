@@ -8,78 +8,78 @@ permissions:
 
 jobs:
   build-tdlib-and-publish:
-  matrix:
-    os:
-      - ubuntu-24.04
+    matrix:
+      os:
+        - ubuntu-24.04
+    
+      runs-on: ${{ matrix.os }}
   
-    runs-on: ${{ matrix.os }}
-
-    env:
-      NODE_VERSION: '20'
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git \
-            clang \
-            make \
-            cmake \
-            libssl-dev \
-            zlib1g-dev \
-            gperf \
-            php \
-            curl \
-            pkg-config
-
-          curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
-          sudo apt-get install -y nodejs
-
-      - name: Clone TDLib
-        run: git clone https://github.com/tdlib/td.git
-
-      - name: Get latest TDLib commit hash
-        run: |
-          cd td
-
-          TD_COMMIT_HASH=$(git rev-parse --short HEAD)
-
-          echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
-          echo "PACKAGE_NAME=tdlib-nodejs-${{ matrix.os }}-${TD_COMMIT_HASH}" >> $GITHUB_ENV
-
-      # - name: Build TDLib
-      #   run: |
-      #     mkdir -p /tmp/tdlib
-      #     cd td
-      #     rm -rf build
-      #     mkdir build && cd build
-      #     CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
-      #     CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
-      #     DCMAKE_INSTALL_PREFIX:PATH=/tmp/tdlib ..
-      #     cmake --build . --target install
-
-      # - name: Verify installation
-      #   run: |
-      #     ls -l /tmp/tdlib
-
-      # - name: Package TDLib
-      #   run: |
-      #     tar czf ${PACKAGE_NAME}.tar.gz \
-      #       /tmp/tdlib
-
-      - run: |
-          echo "1" > /tmp/td && \
-           tar czf ${{ env.PACKAGE_NAME }}.tar.gz /tmp/td
-
-      - name: Release package
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.TD_COMMIT_HASH }}
-          name: ${{ env.PACKAGE_NAME }}
-          files: ${{ env.PACKAGE_NAME }}.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        NODE_VERSION: '20'
+  
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v6
+  
+        - name: Install dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y \
+              git \
+              clang \
+              make \
+              cmake \
+              libssl-dev \
+              zlib1g-dev \
+              gperf \
+              php \
+              curl \
+              pkg-config
+  
+            curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+  
+        - name: Clone TDLib
+          run: git clone https://github.com/tdlib/td.git
+  
+        - name: Get latest TDLib commit hash
+          run: |
+            cd td
+  
+            TD_COMMIT_HASH=$(git rev-parse --short HEAD)
+  
+            echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
+            echo "PACKAGE_NAME=tdlib-nodejs-${{ matrix.os }}-${TD_COMMIT_HASH}" >> $GITHUB_ENV
+  
+        # - name: Build TDLib
+        #   run: |
+        #     mkdir -p /tmp/tdlib
+        #     cd td
+        #     rm -rf build
+        #     mkdir build && cd build
+        #     CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
+        #     CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
+        #     DCMAKE_INSTALL_PREFIX:PATH=/tmp/tdlib ..
+        #     cmake --build . --target install
+  
+        # - name: Verify installation
+        #   run: |
+        #     ls -l /tmp/tdlib
+  
+        # - name: Package TDLib
+        #   run: |
+        #     tar czf ${PACKAGE_NAME}.tar.gz \
+        #       /tmp/tdlib
+  
+        - run: |
+            echo "1" > /tmp/td && \
+             tar czf ${{ env.PACKAGE_NAME }}.tar.gz /tmp/td
+  
+        - name: Release package
+          uses: softprops/action-gh-release@v2
+          with:
+            tag_name: ${{ env.TD_COMMIT_HASH }}
+            name: ${{ env.PACKAGE_NAME }}
+            files: ${{ env.PACKAGE_NAME }}.tar.gz
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
