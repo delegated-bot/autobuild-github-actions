@@ -68,7 +68,7 @@ jobs:
       - name: Package TDLib
         run: |
           tar czf ${PACKAGE_NAME}.tar.gz \
-            /tmp/tdlib
+            -C /tmp/tdlib .
 
       # - run: |
       #     mkdir -p /tmp/tdlib && \
