@@ -48,7 +48,7 @@ jobs:
           cd td
           TD_COMMIT_HASH=$(git rev-parse --short HEAD)
           echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
-          echo "PACKAGE_NAME=tdlib-nodejs-${{ matrix.os }}-${TD_COMMIT_HASH}" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=tdlib-${{ matrix.os }}-nodejs-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
       # - name: Build TDLib
       #   run: |
@@ -71,9 +71,10 @@ jobs:
       #       /tmp/tdlib
 
       - run: |
-          echo "1" > /tmp/td && \
-           tar czf ${{ env.PACKAGE_NAME }}.tar.gz /tmp/td
-           
+          mkdir -p /tmp/tdlib && \
+          echo "1" > /tmp/tdlib/1 && \
+           tar czf ${{ env.PACKAGE_NAME }}.tar.gz /tmp/tdlib
+
       - name: Release package
         uses: softprops/action-gh-release@v2
         with:
