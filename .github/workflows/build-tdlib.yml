@@ -26,8 +26,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            curl \
-            pkg-config \
             make \
             git \
             zlib1g-dev \
@@ -37,7 +35,9 @@ jobs:
             cmake \
             clang-18 \
             libc++-18-dev \
-            libc++abi-18-dev
+            libc++abi-18-dev \
+            curl \
+            pkg-config
 
           curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
           sudo apt-get install -y nodejs
@@ -60,22 +60,16 @@ jobs:
           mkdir build && cd build
           CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
           CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
-          DCMAKE_INSTALL_PREFIX:PATH=/tmp/tdlib ..
+          DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
           cmake --build . --target install
 
       - name: Verify build
         run: |
-          ls -l /tmp/tdlib
+          ls -l td/tdlib
 
       - name: Package TDLib
         run: |
-          tar czf ${PACKAGE_NAME}.tar.gz \
-            -C /tmp/tdlib .
-
-      # - run: |
-      #     mkdir -p /tmp/tdlib && \
-      #     echo "1" > /tmp/tdlib/1 && \
-      #      tar czf ${{ env.PACKAGE_NAME }}.tar.gz -C /tmp/tdlib .
+          tar czf ${PACKAGE_NAME}.tar.gz -C td tdlib
 
       - name: Release package
         uses: softprops/action-gh-release@78237c54eb15310cb292a15480c4be010be47aeb
