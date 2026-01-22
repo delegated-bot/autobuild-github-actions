@@ -7,8 +7,12 @@ permissions:
   contents: write
 
 jobs:
-  build-and-publish:
-    runs-on: ubuntu-24.04
+  build-tdlib-and-publish:
+  matrix:
+    os:
+      - ubuntu-24.04
+  
+    runs-on: ${{ matrix.os }}
 
     env:
       NODE_VERSION: '20'
@@ -45,7 +49,7 @@ jobs:
           TD_COMMIT_HASH=$(git rev-parse --short HEAD)
 
           echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
-          echo "PACKAGE_NAME=tdlib-nodejs-${{ runner.os }}-${TD_COMMIT_HASH}" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=tdlib-nodejs-${{ matrix.os }}-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
       # - name: Build TDLib
       #   run: |
