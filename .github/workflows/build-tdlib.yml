@@ -26,18 +26,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git \
-            clang \
-            libc++-dev \
-            libc++abi-dev \
-            make \
-            cmake \
-            libssl-dev \
-            zlib1g-dev \
-            gperf \
-            php \
             curl \
-            pkg-config
+            pkg-config \
+            make \
+            git \
+            zlib1g-dev \
+            libssl-dev \
+            gperf \
+            php-cli \
+            cmake \
+            clang-18 \
+            libc++-18-dev \
+            libc++abi-18-dev
 
           curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
           sudo apt-get install -y nodejs
