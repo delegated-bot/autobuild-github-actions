@@ -28,8 +28,8 @@ jobs:
           sudo apt-get install -y \
             git \
             clang \
-            libc++-18-dev \
-            libc++abi-18-dev \
+            libc++-dev \
+            libc++abi-dev \
             make \
             cmake \
             libssl-dev \
