@@ -1,4 +1,4 @@
-name: Build TDLib for Node.js on Ubuntu
+name: Build TDLib
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  build-tdlib-and-publish:
+  build-tdlib-nodejs:
     strategy:
       matrix:
         os:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-        NODE_VERSION: '20'
+      NODE_VERSION: '20'
 
     steps:
       - name: Checkout repository
@@ -50,33 +50,33 @@ jobs:
           echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
           echo "PACKAGE_NAME=tdlib-${{ matrix.os }}-nodejs-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
-      # - name: Build TDLib
-      #   run: |
-      #     mkdir -p /tmp/tdlib
-      #     cd td
-      #     rm -rf build
-      #     mkdir build && cd build
-      #     CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
-      #     CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
-      #     DCMAKE_INSTALL_PREFIX:PATH=/tmp/tdlib ..
-      #     cmake --build . --target install
+      - name: Build TDLib
+        run: |
+          mkdir -p /tmp/tdlib
+          cd td
+          rm -rf build
+          mkdir build && cd build
+          CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
+          CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
+          DCMAKE_INSTALL_PREFIX:PATH=/tmp/tdlib ..
+          cmake --build . --target install
 
-      # - name: Verify installation
-      #   run: |
-      #     ls -l /tmp/tdlib
+      - name: Verify build
+        run: |
+          ls -l /tmp/tdlib
 
-      # - name: Package TDLib
-      #   run: |
-      #     tar czf ${PACKAGE_NAME}.tar.gz \
-      #       /tmp/tdlib
+      - name: Package TDLib
+        run: |
+          tar czf ${PACKAGE_NAME}.tar.gz \
+            /tmp/tdlib
 
-      - run: |
-          mkdir -p /tmp/tdlib && \
-          echo "1" > /tmp/tdlib/1 && \
-           tar czf ${{ env.PACKAGE_NAME }}.tar.gz /tmp/tdlib
+      # - run: |
+      #     mkdir -p /tmp/tdlib && \
+      #     echo "1" > /tmp/tdlib/1 && \
+      #      tar czf ${{ env.PACKAGE_NAME }}.tar.gz -C /tmp/tdlib .
 
       - name: Release package
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@78237c54eb15310cb292a15480c4be010be47aeb
         with:
           tag_name: ${{ env.TD_COMMIT_HASH }}
           name: ${{ env.PACKAGE_NAME }}
