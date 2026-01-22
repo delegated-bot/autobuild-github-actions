@@ -3,6 +3,9 @@ name: Build TDLib for Node.js
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -46,24 +49,23 @@ jobs:
 
       # - name: Build TDLib
       #   run: |
+      #     mkdir -p /tmp/tdlib
       #     cd td
       #     rm -rf build
       #     mkdir build && cd build
       #     CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
       #     CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
-      #     DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+      #     DCMAKE_INSTALL_PREFIX:PATH=/tmp/tdlib ..
       #     cmake --build . --target install
 
       # - name: Verify installation
       #   run: |
-      #     ls -l /usr/local/include/td
-      #     ls -l /usr/local/lib | grep td
+      #     ls -l /tmp/tdlib
 
       # - name: Package TDLib
       #   run: |
       #     tar czf ${PACKAGE_NAME}.tar.gz \
-      #       /usr/local/include/td \
-      #       /usr/local/lib
+      #       /tmp/tdlib
 
       - run: |
           echo "1" > /tmp/td && \
@@ -72,7 +74,7 @@ jobs:
       - name: Release package
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.TD_COMMIT_HASH }}
+          # tag_name: ${{ env.TD_COMMIT_HASH }}
           name: ${{ env.PACKAGE_NAME }}
           files: ${{ env.PACKAGE_NAME }}.tar.gz
         env:
