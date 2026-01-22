@@ -50,30 +50,10 @@ jobs:
           echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
           echo "PACKAGE_NAME=tdlib-${{ matrix.os }}-nodejs-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
-      - name: Build TDLib
-        run: |
-          mkdir -p /tmp/tdlib
-          cd td
-          rm -rf build
-          mkdir build && cd build
-          CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
-          CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
-          DCMAKE_INSTALL_PREFIX:PATH=/tmp/tdlib ..
-          cmake --build . --target install
-
-      - name: Verify build
-        run: |
-          ls -l /tmp/tdlib
-
-      - name: Package TDLib
-        run: |
-          tar czf ${PACKAGE_NAME}.tar.gz \
-            /tmp/tdlib
-
-      # - run: |
-      #     mkdir -p /tmp/tdlib && \
-      #     echo "1" > /tmp/tdlib/1 && \
-      #      tar czf ${{ env.PACKAGE_NAME }}.tar.gz -C /tmp/tdlib .
+      - run: |
+          mkdir -p /tmp/tdlib && \
+          echo "1" > /tmp/tdlib/1 && \
+           tar czf ${{ env.PACKAGE_NAME }}.tar.gz -C /tmp/tdlib .
 
       - name: Release package
         uses: softprops/action-gh-release@78237c54eb15310cb292a15480c4be010be47aeb
