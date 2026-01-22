@@ -65,7 +65,7 @@ jobs:
           CXX=/usr/bin/clang++-18 \
           cmake \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+            -DCMAKE_INSTALL_PREFIX:PATH=../tdlib .. \
             -DCMAKE_INSTALL_LIBDIR=lib \
             -DCMAKE_INSTALL_INCLUDEDIR=include \
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
