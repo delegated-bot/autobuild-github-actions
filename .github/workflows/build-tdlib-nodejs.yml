@@ -74,7 +74,7 @@ jobs:
       - name: Release package
         uses: softprops/action-gh-release@v2
         with:
-          # tag_name: ${{ env.TD_COMMIT_HASH }}
+          tag_name: ${{ env.TD_COMMIT_HASH }}
           name: ${{ env.PACKAGE_NAME }}
           files: ${{ env.PACKAGE_NAME }}.tar.gz
         env:
