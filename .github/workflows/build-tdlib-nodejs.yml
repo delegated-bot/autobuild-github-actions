@@ -1,12 +1,12 @@
-name: Build TDLib for Node.js (manual)
+name: Build TDLib for Node.js
 
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to run pipeline from'
-        required: true
-        default: 'main'
+    # inputs:
+    #   branch:
+    #     description: 'Branch to run pipeline from'
+    #     required: true
+    #     default: 'main'
 
 jobs:
   build-and-publish:
@@ -17,16 +17,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.branch }}
+        uses: actions/checkout@v6
+        # with:
+        #   ref: ${{ github.event.inputs.branch }}
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             git \
-            g++ \
+            clang \
             make \
             cmake \
             libssl-dev \
@@ -38,10 +38,6 @@ jobs:
 
           curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
           sudo apt-get install -y nodejs
-
-          node -v
-          npm -v
-          openssl version
 
       - name: Clone TDLib
         run: git clone https://github.com/tdlib/td.git
@@ -55,26 +51,15 @@ jobs:
           echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
           echo "PACKAGE_NAME=tdlib-nodejs-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
-      # - name: Split TDLib sources
-      #   run: |
-      #     cd td
-      #     php SplitSource.php
-
       # - name: Build TDLib
       #   run: |
       #     cd td
       #     rm -rf build
       #     mkdir build && cd build
-      #     cmake \
-      #       -DCMAKE_BUILD_TYPE=Release \
-      #       -DCMAKE_INSTALL_PREFIX=/usr/local \
-      #       ..
-      #     cmake --build . --target install -- -j$(nproc)
-
-      # - name: Undo SplitSource
-      #   run: |
-      #     cd td
-      #     php SplitSource.php --undo
+      #     CXXFLAGS="-stdlib=libc++" CC=/usr/bin/clang-18 \
+      #     CXX=/usr/bin/clang++-18 cmake -DCMAKE_BUILD_TYPE=Release \
+      #     DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+      #     cmake --build . --target install
 
       # - name: Verify installation
       #   run: |
@@ -89,11 +74,13 @@ jobs:
 
       - run: |
           echo "1" > /tmp/td && \
-           tar czf ${PACKAGE_NAME}.tar.gz /tmp/td
+           tar czf ${{ env.PACKAGE_NAME }}.tar.gz /tmp/td
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Release package
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TD_COMMIT_HASH }}
           name: ${{ env.PACKAGE_NAME }}
-          path: ${{ env.PACKAGE_NAME }}.tar.gz
-          overwrite: true
+          files: ${{ env.PACKAGE_NAME }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
