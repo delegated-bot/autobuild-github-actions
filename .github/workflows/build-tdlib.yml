@@ -7,12 +7,15 @@ permissions:
   contents: write
 
 jobs:
-  build-tdlib-nodejs:
+  build-tdlib:
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-24.04
+        language:
+          - nodejs
+          - go
 
     runs-on: ${{ matrix.os }}
 
@@ -23,35 +26,61 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             make \
             git \
-            zlib1g-dev \
-            libssl-dev \
             gperf \
             php-cli \
             cmake \
             clang-18 \
             libc++-18-dev \
             libc++abi-18-dev \
+            libunwind-18-dev \
             curl \
-            pkg-config
+            pkg-config \
+            perl
 
+      - name: Install Node.js (nodejs variant only)
+        if: matrix.language == 'nodejs'
+        run: |
           curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
           sudo apt-get install -y nodejs
+
+      - name: Build static OpenSSL
+        run: |
+          curl -fsSL https://www.openssl.org/source/openssl-3.0.15.tar.gz -o openssl.tar.gz
+          tar xzf openssl.tar.gz
+          cd openssl-3.0.15
+          ./Configure linux-x86_64 no-shared no-dso no-tests \
+            --prefix=/tmp/openssl-static \
+            CC=/usr/bin/clang-18 \
+            CXX=/usr/bin/clang++-18
+          make -j$(nproc)
+          make install_sw
+          echo "OPENSSL_ROOT_DIR=/tmp/openssl-static" >> $GITHUB_ENV
+
+      - name: Build static zlib
+        run: |
+          curl -fsSL https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz -o zlib.tar.gz
+          tar xzf zlib.tar.gz
+          cd zlib-1.3.1
+          CC=/usr/bin/clang-18 ./configure --static --prefix=/tmp/zlib-static
+          make -j$(nproc)
+          make install
+          echo "ZLIB_ROOT=/tmp/zlib-static" >> $GITHUB_ENV
 
       - name: Clone TDLib
         run: git clone https://github.com/tdlib/td.git
 
-      - name: Get latest TDLib commit hash
+      - name: Get TDLib commit hash & set package name
         run: |
           cd td
           TD_COMMIT_HASH=$(git rev-parse --short HEAD)
           echo "TD_COMMIT_HASH=$TD_COMMIT_HASH" >> $GITHUB_ENV
-          echo "PACKAGE_NAME=tdlib-${{ matrix.os }}-nodejs-${TD_COMMIT_HASH}" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=tdlib-${{ matrix.os }}-${{ matrix.language }}-${TD_COMMIT_HASH}" >> $GITHUB_ENV
 
       - name: Build TDLib
         run: |
@@ -61,27 +90,58 @@ jobs:
           cd build
 
           CXXFLAGS="-stdlib=libc++" \
+          LDFLAGS="-Wl,-Bstatic -lc++ -lc++abi -lunwind -Wl,-Bdynamic" \
           CC=/usr/bin/clang-18 \
           CXX=/usr/bin/clang++-18 \
           cmake \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+            -DCMAKE_INSTALL_PREFIX:PATH=../tdlib \
+            -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" \
+            -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS" \
+            -DTD_INSTALL_SHARED_LIBRARIES=OFF \
+            -DOPENSSL_USE_STATIC_LIBS=TRUE \
+            -DZLIB_USE_STATIC_LIBS=ON \
+            -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT_DIR" \
+            -DZLIB_ROOT="$ZLIB_ROOT" \
+            ..
 
-          cmake --build . --target install
+          cmake --build . --target install -j$(nproc)
+
+      - name: Bundle static runtime & dependency libraries
+        run: |
+          LIBCXX_DIR=$(find /usr/lib -maxdepth 3 -name "libc++.a" -path "*/llvm-*" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "")
+
+          cp /tmp/openssl-static/lib*/libssl.a    td/tdlib/lib/ 2>/dev/null || true
+          cp /tmp/openssl-static/lib*/libcrypto.a td/tdlib/lib/ 2>/dev/null || true
+          cp /tmp/zlib-static/lib*/libz.a         td/tdlib/lib/ 2>/dev/null || true
+
+          if [ -n "$LIBCXX_DIR" ] && [ -d "$LIBCXX_DIR" ]; then
+            cp "$LIBCXX_DIR"/libc++.a     td/tdlib/lib/ 2>/dev/null || true
+            cp "$LIBCXX_DIR"/libc++abi.a  td/tdlib/lib/ 2>/dev/null || true
+            cp "$LIBCXX_DIR"/libunwind.a  td/tdlib/lib/ 2>/dev/null || true
+          fi
 
       - name: Verify build
         run: |
-          ls -l td/tdlib
+          echo "=== TDLib layout ==="
+          find td/tdlib -type f | sort
+          echo ""
+          echo "=== Static libraries ==="
+          ls -lh td/tdlib/lib/
+          echo ""
+          echo "=== Shared library check ==="
+          find td/tdlib -name "*.so" | grep -q . && echo "FAIL: shared libraries found" && exit 1 || echo "PASS: no shared libraries"
 
       - name: Package TDLib
         run: |
-          tar czf ${PACKAGE_NAME}.tar.gz -C td tdlib
+          tar czf "${PACKAGE_NAME}.tar.gz" -C td tdlib
 
       - name: Release package
         uses: softprops/action-gh-release@78237c54eb15310cb292a15480c4be010be47aeb
         with:
-          tag_name: ${{ env.TD_COMMIT_HASH }}
+          tag_name: tdlib-${{ matrix.language }}-${{ env.TD_COMMIT_HASH }}
           name: ${{ env.PACKAGE_NAME }}
           files: ${{ env.PACKAGE_NAME }}.tar.gz
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
