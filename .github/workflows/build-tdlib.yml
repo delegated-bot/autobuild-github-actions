@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tdlib_commit:
-        description: 'Optional: TDLib commit hash (short or full). Leave empty to build latest master.'
+        description: 'Optional: TDLib commit hash (short or full, e.g. "a17f87c"). Leave empty to build latest master.'
         required: false
         type: string
         default: ''
@@ -78,15 +78,16 @@ jobs:
           make install
           echo "ZLIB_ROOT=/tmp/zlib-static" >> $GITHUB_ENV
 
-      - name: Clone TDLib
+      - name: Clone TDLib (latest master)
+        if: inputs.tdlib_commit == ''
         run: git clone --depth=1 https://github.com/tdlib/td.git
 
-      - name: Checkout specific TDLib commit (if provided)
+      - name: Clone TDLib (specific commit)
         if: inputs.tdlib_commit != ''
         run: |
+          git clone https://github.com/tdlib/td.git
           cd td
-          git fetch origin "${{ inputs.tdlib_commit }}"
-          git checkout FETCH_HEAD
+          git checkout "${{ inputs.tdlib_commit }}"
 
       - name: Get TDLib commit hash & set package name
         run: |
