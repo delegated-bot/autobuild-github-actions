@@ -2,6 +2,12 @@ name: Build TDLib
 
 on:
   workflow_dispatch:
+    inputs:
+      tdlib_commit:
+        description: 'Optional: TDLib commit hash (short or full). Leave empty to build latest master.'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -73,7 +79,14 @@ jobs:
           echo "ZLIB_ROOT=/tmp/zlib-static" >> $GITHUB_ENV
 
       - name: Clone TDLib
-        run: git clone https://github.com/tdlib/td.git
+        run: git clone --depth=1 https://github.com/tdlib/td.git
+
+      - name: Checkout specific TDLib commit (if provided)
+        if: inputs.tdlib_commit != ''
+        run: |
+          cd td
+          git fetch origin "${{ inputs.tdlib_commit }}"
+          git checkout FETCH_HEAD
 
       - name: Get TDLib commit hash & set package name
         run: |
